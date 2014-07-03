@@ -111,7 +111,8 @@ public class Grammer {
 
 		if(A.size() > 1)
 		{
-			the_others = (ArrayList<Token>)the_others.subList(1, A.size() - 1);
+			for(int ii = 1; ii < A.size() ;ii++)
+				the_others.add((Token)A.get(ii));
 		}
 		firsts_of_the_others = getFirsts(the_others);
 
@@ -133,7 +134,7 @@ public class Grammer {
 		ArrayList<Token> temp;
 		Set<Terminal> result = new HashSet<Terminal>();
 		ArrayList<Token> after_A = new ArrayList<>();
-		int[] index;
+		ArrayList<Integer> index = new ArrayList<>();
 		int iter=0;
 
 		for(int counter = 0 ; counter < rules.size() ; counter++)
@@ -141,40 +142,46 @@ public class Grammer {
 			lhs = rules.get(counter).getLeftSide();
 			rhs =  rules.get(counter).getRightSide();
 			temp=rhs;
-			
+
 			for(int i = rhs.size()-1;i>-1;i--)
 			{
 				if(rhs.get(i).getName().charAt(0) == '#')
 					rhs.remove(i);
 			}
+
+
+			index.add(rhs.indexOf((Token)A));
+			iter=0;
 			
-			
-			index[iter] = rhs.indexOf((Token)A);
-			while(index[iter] != -1 && index[iter] < rhs.size()-1)
+			while(index.get(iter) != -1 && index.get(iter) < rhs.size()-1)
 			{
 				temp.clear();
-				for(int ii = index[iter]+1; ii < rhs.size() ;ii++)
+				for(int ii = index.get(iter)+1; ii < rhs.size() ;ii++)
 					temp.add((Token)rhs.get(ii));
 				iter++;
-				index[iter] = temp.indexOf((Token)A);
+				index.add( temp.indexOf((Token)A));
 			}
-			
-			
 
-			if(index != -1)
+
+
+
+			if(index.size() > 0)
 			{
-				if(index == rhs.size() - 1)
-					result.addAll(getFollows(lhs));
-				else
+				for(iter = 0;iter<index.size() ;iter++)
 				{
-					for(int ii = index+1; ii < rhs.size() ;ii++)
-						after_A.add((Token)rhs.get(ii));
-					
-					result.addAll(getFirsts(after_A));
-					if(getFirsts(after_A).contains(Terminal.getTerminal("Epsilon")))
-					{
-						result.remove(Terminal.getTerminal("Epsilon"));
+					if(index.get(iter) == rhs.size() - 1)
 						result.addAll(getFollows(lhs));
+					else
+					{
+						for(int ii = index.get(iter)+1; ii < rhs.size() ;ii++)
+							after_A.add((Token)rhs.get(ii));
+
+						result.addAll(getFirsts(after_A));
+						if(getFirsts(after_A).contains(Terminal.getTerminal("Epsilon")))
+						{
+							result.remove(Terminal.getTerminal("Epsilon"));
+							result.addAll(getFollows(lhs));
+						}
 					}
 				}
 			}
