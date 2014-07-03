@@ -128,7 +128,7 @@ public class Grammer {
 
 	public Set<Terminal> getFollows(NonTerminal A)
 	{
-		/*		NonTerminal lhs;
+		NonTerminal lhs;
 		ArrayList<Token> rhs;
 		ArrayList<Token> temp;
 		Set<Terminal> result = new HashSet<Terminal>();
@@ -150,11 +150,13 @@ public class Grammer {
 			
 			
 			index[iter] = rhs.indexOf((Token)A);
-			while(index[iter] != -1 && index[iter] < rhs.size())
+			while(index[iter] != -1 && index[iter] < rhs.size()-1)
 			{
 				temp.clear();
 				for(int ii = index[iter]+1; ii < rhs.size() ;ii++)
-					after_A.add((Token)rhs.get(ii));
+					temp.add((Token)rhs.get(ii));
+				iter++;
+				index[iter] = temp.indexOf((Token)A);
 			}
 			
 			
@@ -183,7 +185,7 @@ public class Grammer {
 
 		A.follows.addAll(result);
 		return result;
-*/
+
 	}
 
 	public void calcFirst()

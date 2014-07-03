@@ -1,0 +1,37 @@
+29
+id@[A-Za-z][0-9A-Za-z]*
+program@program
+var@var
+array@array
+num@[0-9]*
+integer@integer
+real@real
+function@function
+procedure@procedure
+begin@begin
+end@end
+assignop@:=
+if@if
+then@then
+else@else
+while@while
+do@do
+relop@<|>|=|<>|>=|<=
+addop@\+
+mulop@\*
+not@not
++@\+
+-@\-
+;@;
+.@\.
+,@,
+Epsilon@
+)@\)
+(@\(
+6
+programme:=arguments id
+programme:=arguments #pid else arguments ; declarations subprogram-declarations compound-statement .
+arguments:=( parameter-list )
+arguments:=Epsilon
+programme:=#pid real
+programme:=Epsilon
