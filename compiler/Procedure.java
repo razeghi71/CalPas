@@ -6,14 +6,41 @@
 
 package compiler;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author mohammad
  */
 public class Procedure extends Token{
 
-    public Procedure(String name) {
+private static ArrayList<Procedure> procedures = new ArrayList<>();
+	
+	public static Procedure getProcedure ( String name )
+	{
+		if ( procedures.contains(name) )
+		{
+			return procedures.get(procedures.indexOf(new Procedure(name))); 
+		} else
+		{
+			Procedure newOne = new Procedure(name);
+			procedures.add(newOne);
+			return newOne;
+		}
+	}
+	
+    public static ArrayList<Procedure> getProcedures() {
+		return procedures;
+	}
+
+	public static void setProcedures(ArrayList<Procedure> procedures) {
+		Procedure.procedures = procedures;
+	}
+
+	private Procedure(String name) {
         super(name);
     }
+    
+    
      
 }

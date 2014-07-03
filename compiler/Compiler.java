@@ -6,6 +6,8 @@
 
 package compiler;
 
+import java.io.IOException;
+
 /**
  *
  * @author mohammad
@@ -16,7 +18,12 @@ public class Compiler {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        new Grammer("config.txt").parseFile("a.pascal");
+        try {
+			new Grammer("/Users/Rfun/Documents/java_workspace/compiler/src/input_grammer.txt").parseFile("a.pascal");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.out.println("error");
+		}
     }
     
 }
