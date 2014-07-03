@@ -3,8 +3,8 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package compiler;
+
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -18,248 +18,159 @@ import java.util.Set;
  */
 public class Grammer {
 
-	ArrayList<Rule> rules = new ArrayList<Rule>();
-	public Grammer(String filePath) throws IOException {
-		readFromFile(filePath);
-		//		calcFirst();
-		calcFollow();
+    ArrayList<Rule> rules = new ArrayList<>();
 
-	}
+    public Grammer(String filePath) throws IOException {
+        readFromFile(filePath);
+        calcFirst();
+        calcFollow();
+        for (NonTerminal i : NonTerminal.getNonTerminals()){
+            System.out.println("=======================");
+            System.out.println(i);
+            System.out.println("Firsts:" + i.getFirsts());
+            System.out.println("Follow:" + i.getFollows());
+            System.out.println("=======================");
+        }
+    }
 
-	public Grammer()
-	{
+    public Grammer() {
 
-	}
+    }
 
-	public void parseFile (String filePath)
-	{
+    public void parseFile(String filePath) {
 
-	}
+    }
 
+    public Set<Terminal> getFirsts(NonTerminal A) {
+        Set<Terminal> result = new HashSet<>();
+        ArrayList<Token> rhs;
+        NonTerminal lhs;
 
-	public Set<Terminal> getFirsts(NonTerminal A)
-	{
-		Set<Terminal> result=new HashSet<>();
-		ArrayList<Token> rhs;
-		NonTerminal lhs;
-		Set<Terminal> temp;
+        for (int counter = 0; counter < rules.size(); counter++) {
+            lhs = rules.get(counter).getLeftSide();
+            rhs = rules.get(counter).getRightSide();
 
-		for(int counter = 0;counter < rules.size(); counter++ )
-		{
-			lhs=rules.get(counter).getLeftSide();
-			rhs=rules.get(counter).getRightSide();
-			for(int i = rhs.size()-1;i>-1;i--)
-			{
-				if(rhs.get(i).getName().charAt(0) == '#')
-					rhs.remove(i);
-			}
+            if (lhs.getName().equals(A.getName())) {
+                for (int i = rhs.size() - 1; i > -1; i--) {
+                    if (rhs.get(i).getName().charAt(0) == '#') {
+                        rhs.remove(i);
+                    }
+                }
+                result.addAll(getFirsts(rhs));
+            }
+        }
+        return result;
+    }
 
-			if(lhs.getName().equals(A.getName()))
-			{
-				if(Terminal.isTerminal(rhs.get(0).getName()))
-				{
-					result.add((Terminal)rhs.get(0));
-				}
-				else
-				{
-					int i = 0;
-					temp = getFirsts((NonTerminal)rhs.get(0));
-					if(rhs.size() > 1)
-						temp.remove(Terminal.getTerminal("Epsilon"));
-					result.addAll(temp);
+    public Set<Terminal> getFirsts(ArrayList<Token> A) {
+        Set<Terminal> result = new HashSet<>();
+        if (Terminal.isTerminal(A.get(0).getName())) {
+            result.add((Terminal) A.get(0));
+            return result;
+        }
+        Set<Terminal> firsts_of_first_element = getFirsts((NonTerminal) A.get(0));
+        result.addAll(firsts_of_first_element);
 
-					while(getFirsts((NonTerminal)rhs.get(i)).contains(Terminal.getTerminal("Epsilon")) && 
-							i < rhs.size())
-					{
-						if(Terminal.isTerminal(rhs.get(i+1).getName())){
-							result.add((Terminal)rhs.get(i+1));
-							break;
-						}
-						if(rhs.size() == i+1)
-							result.addAll(getFirsts((NonTerminal)rhs.get(i+1)));
-						else
-						{
-							temp=getFirsts((NonTerminal)rhs.get(i+1));
-							temp.remove(Terminal.getTerminal("Epsilon"));
-							result.addAll(temp);
-						}
-					}
+        if (result.contains(Terminal.getTerminal("Epsilon")) && A.size() > 1) {
+            ArrayList<Token> the_others = new ArrayList<>( A.subList(1, A.size() ));
+            result.remove(Terminal.getTerminal("Epsilon"));
+            result.addAll(getFirsts(the_others));
+        }
 
-					i++;
-				}
-			}
+        return result;
+    }
 
-		}
+    private <T> ArrayList<Integer> getIndexOfAll(ArrayList<T> a, T b) {
+        ArrayList<Integer> ans = new ArrayList<>();
+        for (int i = 0; i < a.size(); i++) {
+            if (a.get(i).equals(b)) {
+                ans.add(i);
+            }
+        }
+        return ans;
+    }
 
-		A.firsts.addAll(result);
-		return result;
+    public Set<Terminal> getFollows(NonTerminal A) {
+        NonTerminal lhs;
+        ArrayList<Token> rhs;
+        Set<Terminal> result = new HashSet<>();
 
+        for (int counter = 0; counter < rules.size(); counter++) {
+            lhs = rules.get(counter).getLeftSide();
+            rhs = rules.get(counter).getRightSide();
 
-	}
+            for (int i = rhs.size() - 1; i > -1; i--) {
+                if (rhs.get(i).getName().charAt(0) == '#') {
+                    rhs.remove(i);
+                }
+            }
 
-	public Set<Terminal> getFirsts(ArrayList<Token> A)
-	{
-		Set<Terminal> result = new HashSet<>();
-		if(Terminal.isTerminal(A.get(0).getName()))
-		{
-			result.add((Terminal)A.get(0));
-			return result;
-		}
-		Set<Terminal> firsts_of_first_element = getFirsts((NonTerminal)A.get(0));
-		Set<Terminal> firsts_of_the_others = new HashSet<>();
-		ArrayList<Token> the_others = new ArrayList<>();
+            ArrayList<Integer> indexOfAll = getIndexOfAll(rhs, A);
 
-		if(A.size() > 1)
-		{
-			for(int ii = 1; ii < A.size() ;ii++)
-				the_others.add((Token)A.get(ii));
-		}
-		firsts_of_the_others = getFirsts(the_others);
+            for (int i : indexOfAll) {
+                if (rhs.size() > i + 1) {
+                    ArrayList<Token> rest = new ArrayList<>(rhs.subList(i + 1, rhs.size() )) ;
+                    Set<Terminal> firstsOfRest = getFirsts(rest);
+                    if (firstsOfRest.contains(Terminal.getTerminal("Epsilon"))) {
+                        firstsOfRest.remove(Terminal.getTerminal("Epsilon"));
+                        result.addAll(getFollows(lhs));
+                    }
+                    result.addAll(firstsOfRest);
+                } else {
+                    result.addAll(getFollows(lhs));
+                }
+            }
+        }
 
-		result.addAll(firsts_of_first_element);
+        return result;
 
-		if(result.contains(Terminal.getTerminal("Epsilon")) && A.size() > 1)
-		{
-			result.remove(Terminal.getTerminal("Epsilon"));
-			result.addAll(firsts_of_the_others);
-		}
+    }
 
-		return result;
-	}
+    public void calcFirst() {
+        for (NonTerminal i : NonTerminal.getNonTerminals()) {
+            i.setFirsts(getFirsts(i));
+        }
 
-	public Set<Terminal> getFollows(NonTerminal A)
-	{
-		NonTerminal lhs;
-		ArrayList<Token> rhs;
-		ArrayList<Token> temp;
-		Set<Terminal> result = new HashSet<Terminal>();
-		ArrayList<Token> after_A = new ArrayList<>();
-		ArrayList<Integer> index = new ArrayList<>();
-		int iter=0;
+    }
 
-		for(int counter = 0 ; counter < rules.size() ; counter++)
-		{
-			lhs = rules.get(counter).getLeftSide();
-			rhs =  rules.get(counter).getRightSide();
-			temp=rhs;
+    public void calcFollow() {
+        for (NonTerminal i : NonTerminal.getNonTerminals()) {
+            i.setFollows(getFollows(i));
+        }
+    }
 
-			for(int i = rhs.size()-1;i>-1;i--)
-			{
-				if(rhs.get(i).getName().charAt(0) == '#')
-					rhs.remove(i);
-			}
+    private void readFromFile(String filePath) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(filePath));
+        int number_of_ids;
+        int number_of_rules;
+        String[] tokenized;
 
+        String line = null;
 
-			index.add(rhs.indexOf((Token)A));
-			iter=0;
-			
-			while(index.get(iter) != -1 && index.get(iter) < rhs.size()-1)
-			{
-				temp.clear();
-				for(int ii = index.get(iter)+1; ii < rhs.size() ;ii++)
-					temp.add((Token)rhs.get(ii));
-				iter++;
-				index.add( temp.indexOf((Token)A));
-			}
+        line = reader.readLine();
 
+        //we will read the used IDs and their Regex
+        number_of_ids = Integer.parseInt(line);
+        for (int counter = 0; counter < number_of_ids; counter++) {
+            line = reader.readLine();
+            tokenized = line.split("@");
+            if (tokenized.length > 1) {
+                Terminal.addTerminal(tokenized[0], tokenized[1]);
+            } else {
+                Terminal.addTerminal(tokenized[0], "");
+            }
+        }
 
+        line = reader.readLine();
 
+        //we will read grammars rules and save them
+        number_of_rules = Integer.parseInt(line);
+        for (int counter = 0; counter < number_of_rules; counter++) {
+            line = reader.readLine();
+            rules.add(new Rule(line));
 
-			if(index.size() > 0)
-			{
-				for(iter = 0;iter<index.size() ;iter++)
-				{
-					if(index.get(iter) == rhs.size() - 1)
-						result.addAll(getFollows(lhs));
-					else
-					{
-						for(int ii = index.get(iter)+1; ii < rhs.size() ;ii++)
-							after_A.add((Token)rhs.get(ii));
+        }
 
-						result.addAll(getFirsts(after_A));
-						if(getFirsts(after_A).contains(Terminal.getTerminal("Epsilon")))
-						{
-							result.remove(Terminal.getTerminal("Epsilon"));
-							result.addAll(getFollows(lhs));
-						}
-					}
-				}
-			}
-
-
-
-		}
-
-		A.follows.addAll(result);
-		return result;
-
-	}
-
-	public void calcFirst()
-	{
-
-		Set<Terminal> set = getFirsts(NonTerminal.getNonTerminal("programme"));
-		for(Terminal s : set)
-			System.out.println(s.getName());
-		System.out.println("kir");
-		set=getFirsts(NonTerminal.getNonTerminal("arguments"));
-		for(Terminal s : set)
-			System.out.println(s.getName());
-
-
-	}
-
-	public void calcFollow()
-	{
-		Set<Terminal> set = getFollows(NonTerminal.getNonTerminal("programme"));
-		for(Terminal s : set)
-			System.out.println(s.getName());
-		System.out.println("kir");
-		set=getFollows(NonTerminal.getNonTerminal("arguments"));
-		for(Terminal s : set)
-			System.out.println(s.getName());
-	}
-
-
-	private void readFromFile(String filePath) throws IOException
-	{
-		BufferedReader reader=new BufferedReader(new FileReader(filePath));
-		int number_of_ids;
-		int number_of_rules;
-		String[] tokenized;
-
-
-		String line=null;
-
-		line=reader.readLine();
-
-		//we will read the used IDs and their Regex
-		number_of_ids=Integer.parseInt(line);
-		for(int counter=0;counter<number_of_ids;counter++)
-		{
-			line=reader.readLine();
-			tokenized=line.split("@");
-			if(tokenized.length>1)
-				Terminal.addTerminal(tokenized[0],tokenized[1]);
-
-			else
-				Terminal.addTerminal(tokenized[0],"");
-		}
-
-		line=reader.readLine();
-
-		//we will read grammars rules and save them
-		number_of_rules=Integer.parseInt(line);
-		for(int counter=0; counter< number_of_rules;counter++)
-		{
-			line=reader.readLine();
-			rules.add(new Rule(line));
-
-		}
-
-
-	}
-
-
+    }
 
 }

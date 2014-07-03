@@ -3,7 +3,6 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-
 package compiler;
 
 import java.io.IOException;
@@ -19,11 +18,11 @@ public class Compiler {
      */
     public static void main(String[] args) {
         try {
-			new Grammer("/Users/Rfun/Documents/java_workspace/compiler/src/input_grammer.txt").parseFile("a.pascal");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			System.out.println("error");
-		}
+            new Grammer("src/input_grammer.txt").parseFile("a.pascal");
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            System.out.println("error");
+        }
     }
-    
+
 }

@@ -28,10 +28,11 @@ not@not
 Epsilon@
 )@\)
 (@\(
-6
+7
 programme:=arguments id
 programme:=arguments #pid else arguments ; declarations subprogram-declarations compound-statement .
-arguments:=( parameter-list )
+arguments:=( parameter-list
 arguments:=Epsilon
 programme:=#pid real
 programme:=Epsilon
+parameter-list:=function
