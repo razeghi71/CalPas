@@ -1,9 +1,9 @@
-29
-id@[A-Za-z][0-9A-Za-z]*
+35
 program@program
 var@var
 array@array
-num@[0-9]*
+of@of
+num@[0-9]+(\.[0-9]+(E(\+|\-)[0-9]+)?)?
 integer@integer
 real@real
 function@function
@@ -17,22 +17,81 @@ else@else
 while@while
 do@do
 relop@<|>|=|<>|>=|<=
-addop@\+
-mulop@\*
+addop@\+|\-|or
+mulop@\*|div|mod|and|/
 not@not
+dotdot@\.\.
 +@\+
 -@\-
 ;@;
 .@\.
 ,@,
-Epsilon@
+:@\:
 )@\)
 (@\(
-7
-programme:=arguments id
-programme:=arguments #pid else arguments ; declarations subprogram-declarations compound-statement .
-arguments:=( parameter-list
-arguments:=Epsilon
-programme:=#pid real
-programme:=Epsilon
-parameter-list:=function parameter-list
+[@\[
+]@\]
+id@[a-zA-Z][A-Za-z0-9]*
+Epsilon@
+$@$
+60
+programe := program id arguments ; declarations subprogram-declarations compound-statement . $
+arguments := ( parameter-list )
+arguments := Epsilon
+parameter-list := identifier-list : type param-gen
+param-gen := ; identifier-list : type param-gen
+param-gen := Epsilon
+identifier-list := id id-gen
+id-gen := , id id-gen
+id-gen := Epsilon
+declarations := var identifier-list : type ; dec-gen
+dec-gen := var identifier-list : type ; dec-gen
+dec-gen := Epsilon
+type := standard-type
+type := array [ dimension ] of standard-type
+dimension := num dotdot num dim-gen
+dim-gen := , num dotdot num dim-gen
+dim-gen := Epsilon
+standard-type := integer
+standard-type := real
+subprogram-declarations := subprogram-declaration subprogram-declaration ;
+subprogram-declarations := Epsilon
+subprogram-declaration := subprogram-head declarations compound-statement
+subprogram-head := function id arguments : standard-type ;
+subprogram-head := procedure id arguments ;
+compound-statement := begin optional-statements end
+optional-statements := statement-list
+optional-statements := Epsilon
+statement-list := statement statement-list-gen
+statement-list-gen := ; statement statement-list-gen
+statement-list-gen := Epsilon
+statement := variable assignop expression
+statement := procedure-statement
+statement := compound-statement
+statement := if expression then statement else statement
+statement := while expression do statement
+variable := id array-index
+array-index := Epsilon
+array-index := [ expression ]
+procedure-statement := id call-parameters
+call-parameters := ( expression-list )
+call-parameters := Epsilon
+expression-list-gen := Epsilon
+expression-list-gen := , expression expression-list-gen
+expression-list := expression expression-list-gen
+expression := simple-expression logical-expression
+logical-expression := relop simple-expression
+logical-expression := Epsilon
+simple-expression := term sum-operand
+simple-expression := sign term sum-operand
+sum-operand := addop term sum-operand
+sum-operand := Epsilon
+term := factor mulop-operand
+mulop-operand := mulop factor
+mulop-operand := Epsilon
+factor := id call-parameters
+factor := num
+factor := ( expression )
+factor := not factor
+sign := +
+sign := -
