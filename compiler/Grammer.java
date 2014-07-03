@@ -113,11 +113,13 @@ public class Grammer {
                     Set<Terminal> firstsOfRest = getFirsts(rest);
                     if (firstsOfRest.contains(Terminal.getTerminal("Epsilon"))) {
                         firstsOfRest.remove(Terminal.getTerminal("Epsilon"));
-                        result.addAll(getFollows(lhs));
+                        if ( !lhs.equals(A) )
+                            result.addAll(getFollows(lhs));
                     }
                     result.addAll(firstsOfRest);
                 } else {
-                    result.addAll(getFollows(lhs));
+                    if ( !lhs.equals(A) )
+                        result.addAll(getFollows(lhs));
                 }
             }
         }
