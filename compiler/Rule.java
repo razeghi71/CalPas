@@ -24,6 +24,8 @@ public class Rule {
 
     private void parseRule(String rule) {
         String[] tokenized = rule.split(":=");
+        tokenized[0] = tokenized[0].trim();
+        tokenized[1] = tokenized[1].trim();
         leftSide = NonTerminal.getNonTerminal(tokenized[0]);
         temp = tokenized[1];
         tokenized = temp.split(" ");
