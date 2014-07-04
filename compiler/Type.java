@@ -10,6 +10,9 @@ package compiler;
  *
  * @author mohammad
  */
-public class SymbolTable {
-    
+public enum Type {
+    IMIDIATE,
+    DIRECT,
+    INDIRECT,
+    TEMP
 }

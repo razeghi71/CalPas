@@ -10,5 +10,23 @@ package compiler;
  *
  * @author mohammad
  */
-public class ThreeAddressCode {
+public enum Operator {
+    PLUS,
+    MINUS,
+    MULT,
+    DIV,
+    IDIV,
+    MOD,
+    OR,
+    AND,
+    NOT,
+    JP,
+    JPF,
+    EQ,
+    NQ,
+    GT,
+    LT,
+    GE,
+    LE,
+    ASSIGN
 }

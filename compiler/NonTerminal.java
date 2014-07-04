@@ -18,7 +18,17 @@ public class NonTerminal extends Token {
     private static ArrayList<NonTerminal> nonTerminals = new ArrayList<>();
     private Set<Terminal> firsts = new HashSet<>();
     private Set<Terminal> follows = new HashSet<>();
+    private String desc;
 
+    public String getDesc() {
+        return desc;
+    }
+
+    public void setDesc(String desc) {
+        this.desc = desc;
+    }
+    
+    
     public Set<Terminal> getFirsts() {
         return firsts;
     }

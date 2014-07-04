@@ -20,17 +20,23 @@ import java.util.regex.Pattern;
  *
  * @author mohammad
  */
-public class Grammer {
+public final class Grammer {
 
     ArrayList<Rule> rules = new ArrayList<>();
 
     public Grammer(String filePath) throws IOException {
         readFromFile(filePath);
+
         calcFirst();
         calcFollow();
-//        for (NonTerminal i : NonTerminal.getNonTerminals()){
-//            System.out.println("=======================");
+
+//        for(NonTerminal i : NonTerminal.getNonTerminals())
+//        {
 //            System.out.println(i);
+//        }
+//        for (Rule i : rules) {
+//            System.out.println("=======================");
+//            System.out.println(i.getLeftSide() + "->" + i.getRightSide());
 //            System.out.println("Firsts:" + i.getFirsts());
 //            System.out.println("Follow:" + i.getFollows());
 //            System.out.println("=======================");
@@ -40,94 +46,22 @@ public class Grammer {
     public Grammer() {
 
     }
-    pasScanner sc;
-    String lookAhead = "";
 
-    public void matchTerminal(Terminal ter) {
-        if (!lookAhead.matches(ter.getRegex())) {
-            
-            System.err.println("input wrong expected : " + ter.getName() + " get : " + lookAhead);
-//            System.out.println(ter.getName().length()+ " " + lookAhead.length());
-        } else {
-            System.out.println("match " + ter.getName());
-        }
-        
-        lookAhead = sc.nextToken();
-        System.out.println("next Lookahead :" + lookAhead);
-    }
+    public Set<Terminal> getFirsts(ArrayList<Token> B) {
+        Set<Terminal> result = new HashSet<>();
 
-    public void match(ArrayList<Token> rhs) {
-        outer : for (Token i : rhs) {
-            System.out.println("i:" + i);
-            if (i.getClass().getName().equals("compiler.Terminal")) {
-                matchTerminal((Terminal) i);
-            } else if (i.getClass().getName().equals("compiler.NonTerminal")) {
-                NonTerminal iNonTerminal = (NonTerminal) i;
-                ArrayList<Integer> lhses = getIndexOfRulesWithLeftHandSide(rules, iNonTerminal);
-                boolean findAny = false;
-                for (Integer j : lhses) {
-//                    System.out.println("===");
-//                    System.out.println(rules.get(j).getRightSide());
-//                    System.out.println(Terminal.getTerminalbyString(lookAhead));
-//                    System.out.println("===");
-                    if ( getFirsts(rules.get(j).getRightSide()).contains(Terminal.getTerminalbyString(lookAhead))  )
-                    {
-                        findAny = true;
-                        System.out.println("using rule:" + rules.get(j).getRightSide());
-                        match(rules.get(j).getRightSide());
-                        continue outer;
-                    }
-                }
-                if ( !findAny )
-                {
-                    if ( iNonTerminal.getFirsts().contains(Terminal.getTerminal("Epsilon")) )
-                    {
-                        if ( !iNonTerminal.getFollows().contains(Terminal.getTerminalbyString(lookAhead)) )
-                        {
-                            System.err.println("lookeahead not match follow");
-                        }
-                    } else {
-                        System.out.println("this rule not contains epsilon");
-                    }
-                }
+        ArrayList<Token> A = new ArrayList<>();
+        for (Token rh : B) {
+            if (rh.getName().charAt(0) != '#') {
+                A.add(rh);
             }
         }
-    }
 
-    public void parseFile(String filePath) throws FileNotFoundException {
-        sc = new pasScanner(filePath);
-        lookAhead = sc.nextToken();
-        ArrayList<Token> first = rules.get(0).getRightSide();
-        match(first);
-    }
-
-    public Set<Terminal> getFirsts(NonTerminal A) {
-        Set<Terminal> result = new HashSet<>();
-        ArrayList<Token> rhs;
-        NonTerminal lhs;
-
-        for (int counter = 0; counter < rules.size(); counter++) {
-            lhs = rules.get(counter).getLeftSide();
-            rhs = rules.get(counter).getRightSide();
-
-            if (lhs.getName().equals(A.getName())) {
-                for (int i = rhs.size() - 1; i > -1; i--) {
-                    if (rhs.get(i).getName().charAt(0) == '#') {
-                        rhs.remove(i);
-                    }
-                }
-                result.addAll(getFirsts(rhs));
-            }
-        }
-        return result;
-    }
-
-    public Set<Terminal> getFirsts(ArrayList<Token> A) {
-        Set<Terminal> result = new HashSet<>();
         if (Terminal.isTerminal(A.get(0).getName())) {
             result.add((Terminal) A.get(0));
             return result;
         }
+
         Set<Terminal> firsts_of_first_element = getFirsts((NonTerminal) A.get(0));
         result.addAll(firsts_of_first_element);
 
@@ -137,6 +71,28 @@ public class Grammer {
             result.addAll(getFirsts(the_others));
         }
 
+        return result;
+    }
+
+    public Set<Terminal> getFirsts(NonTerminal A) {
+        Set<Terminal> result = new HashSet<>();
+        ArrayList<Token> rhs;
+        NonTerminal lhs;
+
+        for (Rule rule : rules) {
+            lhs = rule.getLeftSide();
+            rhs = rule.getRightSide();
+            ArrayList<Token> removed = new ArrayList<>();
+            if (lhs.getName().equals(A.getName())) {
+                for (Token rh : rhs) {
+                    if (rh.getName().charAt(0) != '#') {
+                        removed.add(rh);
+                    }
+                }
+//                System.out.println(removed);
+                result.addAll(getFirsts(removed));
+            }
+        }
         return result;
     }
 
@@ -150,36 +106,24 @@ public class Grammer {
         return ans;
     }
 
-    private ArrayList<Integer> getIndexOfRulesWithLeftHandSide(ArrayList<Rule> a, NonTerminal b) {
-        ArrayList<Integer> ans = new ArrayList<>();
-        for (int i = 0; i < a.size(); i++) {
-            if (a.get(i).getLeftSide().equals(b)) {
-                ans.add(i);
-            }
-        }
-        return ans;
-    }
-
     public Set<Terminal> getFollows(NonTerminal A) {
         NonTerminal lhs;
         ArrayList<Token> rhs;
         Set<Terminal> result = new HashSet<>();
 
-        for (int counter = 0; counter < rules.size(); counter++) {
-            lhs = rules.get(counter).getLeftSide();
-            rhs = rules.get(counter).getRightSide();
-
-            for (int i = rhs.size() - 1; i > -1; i--) {
-                if (rhs.get(i).getName().charAt(0) == '#') {
-                    rhs.remove(i);
+        for (Rule rule : rules) {
+            lhs = rule.getLeftSide();
+            rhs = rule.getRightSide();
+            ArrayList<Token> removed = new ArrayList<>();
+            for (int i = 0; i < rhs.size(); i++) {
+                if (rhs.get(i).getName().charAt(0) != '#') {
+                    removed.add(rhs.get(i));
                 }
             }
-
-            ArrayList<Integer> indexOfAll = getIndexOfAll(rhs, A);
-
+            ArrayList<Integer> indexOfAll = getIndexOfAll(removed, A);
             for (int i : indexOfAll) {
-                if (rhs.size() > i + 1) {
-                    ArrayList<Token> rest = new ArrayList<>(rhs.subList(i + 1, rhs.size()));
+                if (removed.size() > i + 1) {
+                    ArrayList<Token> rest = new ArrayList<>(removed.subList(i + 1, removed.size()));
                     Set<Terminal> firstsOfRest = getFirsts(rest);
                     if (firstsOfRest.contains(Terminal.getTerminal("Epsilon"))) {
                         firstsOfRest.remove(Terminal.getTerminal("Epsilon"));
@@ -216,6 +160,7 @@ public class Grammer {
     private void readFromFile(String filePath) throws IOException {
         BufferedReader reader = new BufferedReader(new FileReader(filePath));
         int number_of_ids;
+        int number_of_descs;
         int number_of_rules;
         String[] tokenized;
 
@@ -240,6 +185,20 @@ public class Grammer {
 //            System.out.println(counter);
             line = reader.readLine();
             rules.add(new Rule(line));
+        }
+
+        line = reader.readLine();
+
+        number_of_descs = Integer.parseInt(line);
+
+        for (int counter = 0; counter < number_of_descs; counter++) {
+            line = reader.readLine();
+            tokenized = line.split("->");
+
+            tokenized[0] = tokenized[0].trim();
+            tokenized[1] = tokenized[1].trim();
+
+            NonTerminal.getNonTerminal(tokenized[0]).setDesc(tokenized[1]);
         }
 
     }

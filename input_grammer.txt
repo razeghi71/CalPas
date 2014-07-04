@@ -34,64 +34,101 @@ dotdot@\.\.
 id@[a-zA-Z][A-Za-z0-9]*
 Epsilon@
 $@$
-60
-programe := program #name_pusher id arguments ; declarations subprogram-declarations compound-statement . $    #name_pusher : faghat esm ro roo stack mizare ke badan bezare to ST
+62
+programe := #save program #add_program_st id arguments ; declarations subprogram-declarations #jmp_to_start compound-statement . $
 arguments := ( parameter-list )
 arguments := Epsilon
-parameter-list := #id-list-start identifier-list : type  param-gen    			#type: vaghit parametra ro khondim,typesh ro moshakhas mikone
-param-gen := ; #id-list-start identifier-list : type  param-gen				#id-lis..:  ye reshteye khasi ro vared mikonim ke bdonim az koja shoro shode
+parameter-list := #push_start_id_stack identifier-list : type #add_ids_to_st param-gen
+param-gen := ; #push_start_id_stack identifier-list : type #add_ids_to_st param-gen
 param-gen := Epsilon
-identifier-list := #name_pusher id id-gen
-id-gen := , #name_pusher id id-gen
+identifier-list := #push_id id id-gen
+id-gen := , #push_id id id-gen
 id-gen := Epsilon
-declarations := var #id-list-start identifier-list : type #type ; dec-gen
-dec-gen := var #id-list-start identifier-list : type ; #type dec-gen
+declarations := var #push_start_id_stack identifier-list : type #add_ids_to_st ; dec-gen
+declarations := Epsilon
+dec-gen := var #push_start_id_stack identifier-list : type #add_ids_to_st ; dec-gen
 dec-gen := Epsilon
-type := standard-type #ST-standard
-type := array [ dimension ] of standard-type #ST-array
-dimension := #first_index num dotdot #second_index num dim-gen
-dim-gen := , #first_index num dotdot #second_index num  dim-gen
+type := standard-type #push_single
+type := array #push_start_dim [ dimension ] of standard-type #push_array
+dimension := #push_id num dotdot #push_id num dim-gen
+dim-gen := , #push_id num dotdot #push_id num dim-gen
 dim-gen := Epsilon
-standard-type := #push_integer integer
-standard-type := #push_real real
-subprogram-declarations := subprogram-declaration subprogram-declarations ;
+standard-type := #push_id integer 
+standard-type := #push_id real
+subprogram-declarations := subprogram-declaration ; subprogram-declarations
 subprogram-declarations := Epsilon
-subprogram-declaration := subprogram-head declarations compound-statement
-subprogram-head := function #name_pusher id arguments : standard-type ;
-subprogram-head := procedure #name_pusher id arguments ;
+subprogram-declaration := subprogram-head declarations compound-statement #add_return_addr_st
+subprogram-head := function #add_function_st id arguments : standard-type #add_function_ret_st ;
+subprogram-head := procedure #add_proc_st id arguments ;
 compound-statement := begin optional-statements end
 optional-statements := statement-list
 optional-statements := Epsilon
 statement-list := statement statement-list-gen
 statement-list-gen := ; statement statement-list-gen
 statement-list-gen := Epsilon
-statement := variable assignop expression #assignment
-statement := procedure-statement
 statement := compound-statement
-statement := if expression then statement else statement
-statement := while expression do statement
-variable := #name_pusher id array-index
+statement := if expression #save then statement else #jpf_save statement #jp
+statement := while #label expression #save do statement #while_filler
+statement := #push_intelligent id proc-or-assign
+proc-or-assign := array-index assignop expression #assignop
+proc-or-assign := call-parameters #assign_jmp
+proc-or-assign := Epsilon #assign_jmp
+array-index := [ expression #calc_array_pos ]
 array-index := Epsilon
-array-index := [ expression ] #compute_variable
-procedure-statement := #name_pusher id call-parameters
-call-parameters := ( #exp-list-start expression-list # )
-call-parameters := Epsilon
+call-parameters := ( expression-list )
+expression-list := expression expression-list-gen
 expression-list-gen := Epsilon
 expression-list-gen := , expression expression-list-gen
-expression-list := expression expression-list-gen
 expression := simple-expression logical-expression
-logical-expression := relop simple-expression
+logical-expression := #push_id relop simple-expression #do_logic
 logical-expression := Epsilon
 simple-expression := term sum-operand
-simple-expression := sign term sum-operand
-sum-operand := addop term sum-operand
+simple-expression := #push_id sign term #set_term_sign sum-operand
+sum-operand := #push_id addop term #sum_calc sum-operand
 sum-operand := Epsilon
 term := factor mulop-operand
-mulop-operand := mulop factor
+mulop-operand := #push_id mulop factor #mul_calc
 mulop-operand := Epsilon
-factor := id call-parameters
-factor := num
+factor := #push_id id #push_start_of_array_or_call call-parameters-2 #call_or_calc_array
+call-parameters-2 := ( expression-list )
+call-parameters-2 := Epsilon
+factor := #push_num num
 factor := ( expression )
-factor := not factor
+factor := not factor #do_not
 sign := +
 sign := -
+34
+programe ->  program
+arguments -> argument
+declarations -> declaration
+subprogram-declarations -> function or procedure declarations
+compound-statement -> program body
+parameter-list -> argument list
+identifier-list -> identifier list
+type -> type 
+param-gen -> parameter
+id-gen -> identifier
+dec-gen -> declaration
+standard-type -> type integer or real
+dimension -> array dimension
+dim-gen -> array dimension
+subprogram-declaration -> function or procedure declaration
+subprogram-head -> function or procedure header
+optional-statements -> statement
+statement-list -> statment list
+statement -> statement
+statement-list-gen -> statement list
+expression -> expression
+proc-or-assign -> procedure arguments or assignment
+array-index -> array index
+call-parameters -> function or procedure call parameters
+expression-list ->  expression list
+expression-list-gen -> expression list
+simple-expression -> expression 
+logical-expression -> relational operation 
+term -> multiply expression
+sum-operand -> sum opeation
+sign -> sign
+factor -> factor
+mulop-operand -> multiply operation
+call-parameters-2 -> call paramaters

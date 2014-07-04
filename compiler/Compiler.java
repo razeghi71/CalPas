@@ -22,7 +22,7 @@ public class Compiler {
     public static void main(String[] args) {
         
         try {
-            new Grammer("src/input_grammer.txt").parseFile("a.pascal");
+            new Parser(new Grammer("src/input_grammer.txt")).parseFile("a.pascal");
         } catch (FileNotFoundException ex) {
             System.err.println("Input File Not Found");
         } catch (IOException ex) {
