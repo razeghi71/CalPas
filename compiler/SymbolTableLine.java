@@ -11,14 +11,39 @@ package compiler;
  * @author mohammad
  */
 public class SymbolTableLine {
-    private String lexme;
-    private String Type;
+    private String lexme = "";
+    private String Type = "";
     private int Dimension;
     private int nrOfCells;
     private int memoryAddress;
     private int PBAddress;
     private int ArrayStartIndex;
     private int returnAddress;
+    private int nrOfArgs;
+
+    public int getNrOfArgs() {
+        return nrOfArgs;
+    }
+
+    @Override
+    public String toString() {
+        return "SymbolTableLine{" + "lexme=" + lexme + ", Type=" + Type + ", Dimension=" + Dimension + ", nrOfCells=" + nrOfCells + ", memoryAddress=" + memoryAddress + ", PBAddress=" + PBAddress + ", ArrayStartIndex=" + ArrayStartIndex + ", returnAddress=" + returnAddress + ", nrOfArgs=" + nrOfArgs + '}';
+    }
+
+    public void setNrOfArgs(int nrOfArgs) {
+        this.nrOfArgs = nrOfArgs;
+    }
+    
+    private boolean sep = false ;
+
+    public boolean isSep() {
+        return sep;
+    }
+
+    public void isSep(boolean isSep) {
+        this.sep = isSep;
+    }
+    
 
     public int getReturnAddress() {
         return returnAddress;
@@ -28,11 +53,6 @@ public class SymbolTableLine {
         this.returnAddress = returnAddress;
     }
 
-    @Override
-    public String toString() {
-        return "SymbolTableLine{" + "lexme=" + lexme + ", Type=" + Type + ", Dimension=" + Dimension + ", nrOfCells=" + nrOfCells + ", memoryAddress=" + memoryAddress + ", PBAddress=" + PBAddress + ", ArrayStartIndex=" + ArrayStartIndex + ", returnAddress=" + returnAddress + '}';
-    }
-    
     
 
     public int getArrayStartIndex() {

@@ -7,8 +7,6 @@ package compiler;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -22,7 +20,9 @@ public class Compiler {
     public static void main(String[] args) {
         
         try {
-            new Parser(new Grammer("src/input_grammer.txt")).parseFile("a.pascal");
+            Parser parse = new Parser(new Grammer("src/input_grammer.txt"));
+            parse.parseFile("a.pascal");
+            parse.dumpResult();
         } catch (FileNotFoundException ex) {
             System.err.println("Input File Not Found");
         } catch (IOException ex) {

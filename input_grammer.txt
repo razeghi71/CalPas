@@ -3,7 +3,7 @@ program@program
 var@var
 array@array
 of@of
-num@[0-9]+(\.[0-9]+(E(\+|\-)[0-9]+)?)?
+num@[0-9]+(\.[0-9]+((E|e)(\+|\-)?[0-9]+)?)?
 integer@integer
 real@real
 function@function
@@ -57,7 +57,7 @@ standard-type := #push_id integer
 standard-type := #push_id real
 subprogram-declarations := subprogram-declaration ; subprogram-declarations
 subprogram-declarations := Epsilon
-subprogram-declaration := subprogram-head declarations compound-statement #add_return_addr_st
+subprogram-declaration := subprogram-head #set_arg_nr declarations compound-statement #add_return_addr_st
 subprogram-head := function #add_function_st id arguments : standard-type #add_function_ret_st ;
 subprogram-head := procedure #add_proc_st id arguments ;
 compound-statement := begin optional-statements end
@@ -87,9 +87,9 @@ simple-expression := #push_id sign term #set_term_sign sum-operand
 sum-operand := #push_id addop term #sum_calc sum-operand
 sum-operand := Epsilon
 term := factor mulop-operand
-mulop-operand := #push_id mulop factor #mul_calc
+mulop-operand := #push_id mulop factor #mul_calc mulop-operand
 mulop-operand := Epsilon
-factor := #push_id id #push_start_of_array_or_call call-parameters-2 #call_or_calc_array
+factor := #push_id_and_check id #push_start_of_array_or_call call-parameters-2 #call_or_calc_array
 call-parameters-2 := ( expression-list )
 call-parameters-2 := Epsilon
 factor := #push_num num

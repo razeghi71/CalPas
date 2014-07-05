@@ -24,7 +24,9 @@ public class CodeGenerator {
     public void dumpSymbolTable() {
         System.out.println("===Start Table===");
         for (SymbolTableLine stl : ST) {
-            System.out.println(stl);
+            if (!stl.getLexme().equals("$main$")) {
+                System.out.println(stl);
+            }
         }
         System.out.println("===End Table===");
     }
@@ -43,7 +45,7 @@ public class CodeGenerator {
         System.out.println("### Start PB ###");
         int j = 0;
         for (ThreeAddressLine i : PB) {
-            System.out.println(j++ + " : " +  i);
+            System.out.println(j++ + " : " + i);
         }
         System.out.println("### End PB ###");
     }
@@ -54,6 +56,7 @@ public class CodeGenerator {
         stl.setDimension(0);
         stl.setLexme(lookahead);
         stl.setPBAddress(PB.size());
+        stl.isSep(true);
         stl.setMemoryAddress(0);
         stl.setNrOfCells(0);
         ST.add(stl);
@@ -69,7 +72,16 @@ public class CodeGenerator {
 
         if (type.equals("single")) {
             String name;
+            outer:
             while (!(name = (String) ss.pop()).equals("PSIS")) {
+                for (int i = ST.size() - 1; i != 0; i--) {
+                    if (ST.get(i).isSep()) {
+                        break;
+                    } else if (ST.get(i).getLexme().equals(name)) {
+                        System.err.println("Variable " + name + " is already defined.");
+                        continue outer;
+                    }
+                }
                 SymbolTableLine stl = new SymbolTableLine();
                 stl.setLexme(name);
                 stl.setType(varType);
@@ -83,6 +95,7 @@ public class CodeGenerator {
                     stl.setDimension(0);
                 }
                 ST.add(stl);
+
             }
         } else if (type.equals("array")) {
             String tmp;
@@ -94,7 +107,16 @@ public class CodeGenerator {
                 begin = first;
             }
             String name;
+            outer:
             while (!(name = (String) ss.pop()).equals("PSIS")) {
+                for (int i = ST.size() - 1; i != 0; i--) {
+                    if (ST.get(i).isSep()) {
+                        break;
+                    } else if (ST.get(i).getLexme().equals(name)) {
+                        System.out.println("Variable " + name + " is already defined.");
+                        continue outer;
+                    }
+                }
                 SymbolTableLine stl = new SymbolTableLine();
                 stl.setLexme(name);
                 stl.setType(varType);
@@ -137,6 +159,7 @@ public class CodeGenerator {
         stl.setDimension(0);
         stl.setLexme(lookahead);
         stl.setType("");
+        stl.isSep(true);
         stl.setPBAddress(PB.size());
         ST.add(stl);
     }
@@ -166,6 +189,7 @@ public class CodeGenerator {
         stl.setDimension(0);
         stl.setMemoryAddress(0);
         stl.setType("");
+        stl.isSep(true);
         stl.setLexme(lookahead);
         stl.setPBAddress(PB.size());
         ST.add(stl);
@@ -186,7 +210,7 @@ public class CodeGenerator {
         SymbolTableLine arrLine = null;
 
         for (SymbolTableLine i : ST) {
-            if (i.getMemoryAddress() == Integer.parseInt(arrayAddress) ) {
+            if (i.getMemoryAddress() == Integer.parseInt(arrayAddress)) {
                 arrLine = i;
                 break;
             }
@@ -196,24 +220,27 @@ public class CodeGenerator {
         minusByArrayIndex.operator = Operator.MINUS;
         minusByArrayIndex.op1 = new Operand(Type.DIRECT, expr);
         minusByArrayIndex.op2 = new Operand(Type.IMIDIATE, arrLine.getArrayStartIndex());
-        minusByArrayIndex.op3 = new Operand(Type.DIRECT, tempCounter++);
+        minusByArrayIndex.op3 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
         PB.add(minusByArrayIndex);
 
         ThreeAddressLine multipyByMemorySize = new ThreeAddressLine();
         multipyByMemorySize.operator = Operator.MULT;
-        multipyByMemorySize.op1 = new Operand(Type.DIRECT, tempCounter - 1);
+        multipyByMemorySize.op1 = new Operand(Type.DIRECT, tempCounter - 2);
         multipyByMemorySize.op2 = new Operand(Type.IMIDIATE, arrLine.getType().equals("integer") ? 1 : 2);
-        multipyByMemorySize.op3 = new Operand(Type.DIRECT, tempCounter++);
+        multipyByMemorySize.op3 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
         PB.add(multipyByMemorySize);
 
         ThreeAddressLine addStartAndOffset = new ThreeAddressLine();
         addStartAndOffset.operator = Operator.PLUS;
-        addStartAndOffset.op1 = new Operand(Type.DIRECT, tempCounter - 1);
+        addStartAndOffset.op1 = new Operand(Type.DIRECT, tempCounter - 2);
         addStartAndOffset.op2 = new Operand(Type.DIRECT, arrLine.getMemoryAddress());
-        addStartAndOffset.op3 = new Operand(Type.DIRECT, tempCounter++);
+        addStartAndOffset.op3 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
         PB.add(addStartAndOffset);
 
-        ss.push(Integer.toString(tempCounter - 1));
+        ss.push(Integer.toString(tempCounter - 2));
     }
 
     public void add_return_addr_st(String lookahead) {
@@ -230,11 +257,11 @@ public class CodeGenerator {
 
         arrLine.setType("Function");
         arrLine.setReturnAddress(curMemory++); // return address is always int
-        
+
         ThreeAddressLine returnToCallee = new ThreeAddressLine();
         returnToCallee.operator = Operator.JP;
         returnToCallee.op1 = new Operand(Type.INDIRECT, arrLine.getReturnAddress());
-        
+
         PB.add(returnToCallee);
     }
 
@@ -263,6 +290,10 @@ public class CodeGenerator {
                 stLine = i;
                 break;
             }
+        }
+
+        if (ST.get(stLine).getNrOfArgs() != params.size()) {
+            System.err.println("call function : " + functionId + " number of arguments does not match");
         }
         for (int i = stLine + 1; i < stLine + params.size() + 1; i++) {
             int val = Integer.parseInt(params.get(i - (stLine + 1)));
@@ -294,9 +325,10 @@ public class CodeGenerator {
 
         relopCode.op1 = new Operand(Type.DIRECT, Integer.parseInt(sp2));
         relopCode.op2 = new Operand(Type.DIRECT, Integer.parseInt(sp1));
-        relopCode.op3 = new Operand(Type.DIRECT, tempCounter++);
+        relopCode.op3 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
 
-        ss.push(Integer.toString(tempCounter - 1));
+        ss.push(Integer.toString(tempCounter - 2));
 
         Operator op = null;
 
@@ -336,8 +368,9 @@ public class CodeGenerator {
             multiplyByMinusOne.operator = Operator.MULT;
             multiplyByMinusOne.op1 = new Operand(Type.DIRECT, -1);
             multiplyByMinusOne.op2 = new Operand(Type.DIRECT, Integer.parseInt(term));
-            multiplyByMinusOne.op3 = new Operand(Type.DIRECT, tempCounter++);
-            ss.push(Integer.toString(tempCounter - 1));
+            multiplyByMinusOne.op3 = new Operand(Type.DIRECT, tempCounter);
+            tempCounter += 2;
+            ss.push(Integer.toString(tempCounter - 2));
             PB.add(multiplyByMinusOne);
 
         }
@@ -352,9 +385,10 @@ public class CodeGenerator {
 
         addCode.op1 = new Operand(Type.DIRECT, Integer.parseInt(sp2));
         addCode.op2 = new Operand(Type.DIRECT, Integer.parseInt(sp1));
-        addCode.op3 = new Operand(Type.DIRECT, tempCounter++);
+        addCode.op3 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
 
-        ss.push(Integer.toString(tempCounter - 1));
+        ss.push(Integer.toString(tempCounter - 2));
 
         Operator op = null;
 
@@ -383,9 +417,10 @@ public class CodeGenerator {
 
         mulCode.op1 = new Operand(Type.DIRECT, Integer.parseInt(sp2));
         mulCode.op2 = new Operand(Type.DIRECT, Integer.parseInt(sp1));
-        mulCode.op3 = new Operand(Type.DIRECT, tempCounter++);
+        mulCode.op3 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
 
-        ss.push(Integer.toString(tempCounter - 1));
+        ss.push(Integer.toString(tempCounter - 2));
 
         Operator op = null;
 
@@ -418,9 +453,10 @@ public class CodeGenerator {
 
         notCode.operator = Operator.NOT;
         notCode.op1 = new Operand(Type.DIRECT, Integer.parseInt(factor));
-        notCode.op2 = new Operand(Type.DIRECT, tempCounter++);
+        notCode.op2 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
 
-        ss.push(Integer.toString(tempCounter - 1));
+        ss.push(Integer.toString(tempCounter - 2));
         PB.add(notCode);
     }
 
@@ -434,25 +470,33 @@ public class CodeGenerator {
         while (!(param = ss.pop()).equals("PSOAOC")) {
             params.add(param);
         }
-
+        
         String id = ss.pop();
 
-        int stLine = 0;
+        int stLine = -1;
 
         for (int i = 0; i < ST.size(); i++) {
             if (ST.get(i).getLexme().equals(id)) {
                 stLine = i;
                 break;
             }
-
         }
-
-        if (params.size() == 0) {
+        
+//        if ( id.equals("minusminus") )
+//        {
+//            System.out.println(params.size());
+//        }
+        
+        if ( !ST.get(stLine).getType().equals("Function") ) {
             ss.push(Integer.toString(ST.get(stLine).getMemoryAddress()));
             return;
         }
-
+//        System.out.println("is in this " + id + " " + params.size());
         if (ST.get(stLine).getType().equals("Function")) {
+            if (params.size() != ST.get(stLine).getNrOfArgs() )
+            {
+                System.err.println("call function : " + id + " number of arguments does not match");
+            }
             for (int i = stLine + 1; i < stLine + params.size() + 1; i++) {
                 int val = Integer.parseInt(params.get(i - (stLine + 1)));
                 ThreeAddressLine assignParameter = new ThreeAddressLine();
@@ -478,24 +522,27 @@ public class CodeGenerator {
             minusByArrayIndex.operator = Operator.MINUS;
             minusByArrayIndex.op1 = new Operand(Type.DIRECT, Integer.parseInt(params.get(0)));
             minusByArrayIndex.op2 = new Operand(Type.IMIDIATE, ST.get(stLine).getArrayStartIndex());
-            minusByArrayIndex.op3 = new Operand(Type.DIRECT, tempCounter++);
+            minusByArrayIndex.op3 = new Operand(Type.DIRECT, tempCounter);
+            tempCounter += 2;
             PB.add(minusByArrayIndex);
 
             ThreeAddressLine multipyByMemorySize = new ThreeAddressLine();
             multipyByMemorySize.operator = Operator.MULT;
-            multipyByMemorySize.op1 = new Operand(Type.DIRECT, tempCounter - 1);
+            multipyByMemorySize.op1 = new Operand(Type.DIRECT, tempCounter - 2);
             multipyByMemorySize.op2 = new Operand(Type.IMIDIATE, ST.get(stLine).getType().equals("integer") ? 1 : 2);
-            multipyByMemorySize.op3 = new Operand(Type.DIRECT, tempCounter++);
+            multipyByMemorySize.op3 = new Operand(Type.DIRECT, tempCounter);
+            tempCounter += 2;
             PB.add(multipyByMemorySize);
 
             ThreeAddressLine addStartAndOffset = new ThreeAddressLine();
             addStartAndOffset.operator = Operator.PLUS;
-            addStartAndOffset.op1 = new Operand(Type.DIRECT, tempCounter - 1);
+            addStartAndOffset.op1 = new Operand(Type.DIRECT, tempCounter - 2);
             addStartAndOffset.op2 = new Operand(Type.DIRECT, ST.get(stLine).getMemoryAddress());
-            addStartAndOffset.op3 = new Operand(Type.DIRECT, tempCounter++);
+            addStartAndOffset.op3 = new Operand(Type.DIRECT, tempCounter);
+            tempCounter += 2;
             PB.add(addStartAndOffset);
 
-            ss.push(Integer.toString(tempCounter - 1));
+            ss.push(Integer.toString(tempCounter - 2));
         }
     }
 
@@ -544,48 +591,144 @@ public class CodeGenerator {
         ThreeAddressLine assignToTemp = new ThreeAddressLine();
         assignToTemp.operator = Operator.ASSIGN;
         assignToTemp.op1 = new Operand(Type.IMIDIATE, Integer.parseInt(lookahead));
-        assignToTemp.op2 = new Operand(Type.DIRECT, tempCounter++);
+        assignToTemp.op2 = new Operand(Type.DIRECT, tempCounter);
+        tempCounter += 2;
         PB.add(assignToTemp);
-        ss.push(Integer.toString(tempCounter - 1));
-    }
-
-    public void convert_id_addr(String lookahead) {
-        String id = ss.pop();
-        int stLine = 0;
-        for (int i = 0; i < ST.size(); i++) {
-            if (ST.get(i).getLexme().equals(id)) {
-                stLine = i;
-                break;
-            }
-
-        }
-        ss.push(Integer.toString(ST.get(stLine).getMemoryAddress()));
+        ss.push(Integer.toString(tempCounter - 2));
     }
 
     public void push_intelligent(String lookahead) {
-        SymbolTableLine stLine = null;
-        for (SymbolTableLine i : ST) {
-            if (i.getLexme().equals(lookahead)) {
-                stLine = i;
+        int stLinei = -1;
+
+        boolean isSep = false;
+
+        int line = 0;
+        for (SymbolTableLine stl : ST) {
+            if (stl.getLexme().equals(lookahead) && stl.isSep()) {
+                stLinei = line;
+                isSep = true;
+                break;
+            }
+            line++;
+
+        }
+
+        if (!isSep) {
+            for (int i = ST.size() - 1; i != 0; i--) {
+                if (ST.get(i).isSep()) {
+                    break;
+                }
+                if (ST.get(i).getLexme().equals(lookahead)) {
+                    stLinei = i;
+                }
+            }
+            if (stLinei == -1) {
+                for (int i = 1; i < ST.size(); i++) {
+                    if (ST.get(i).isSep()) {
+                        break;
+                    }
+                    if (ST.get(i).getLexme().equals(lookahead)) {
+                        stLinei = i;
+                    }
+                }
             }
         }
 
-        if ( stLine.getType().equals("Function")) {
-            ss.push(lookahead);
-            ss.push("$$$$");
+        if (stLinei != -1) {
+            SymbolTableLine stLine = ST.get(stLinei);
+
+            if (stLine.isSep()) {
+                ss.push(lookahead);
+                ss.push("$$$$");
+                return;
+            } else {
+                ss.push(Integer.toString(stLine.getMemoryAddress()));
+                return;
+            }
         } else {
-            ss.push(Integer.toString(stLine.getMemoryAddress()));
+            System.err.println("variable " + lookahead + " not defined");
         }
-    }
-    
-    public void jmp_to_start(String lookahead)
-    {
-        ss.pop();
-        
-        ThreeAddressLine jumpToStart = new ThreeAddressLine();
-        
-        PB.get(0).setOperator(Operator.JP);
-        PB.get(0).setOp1(new Operand(Type.DIRECT, PB.size()));
+        ss.push(lookahead);
     }
 
+    public void jmp_to_start(String lookahead) {
+        ss.pop();
+
+        ThreeAddressLine jumpToStart = new ThreeAddressLine();
+
+        PB.get(0).setOperator(Operator.JP);
+        PB.get(0).setOp1(new Operand(Type.DIRECT, PB.size()));
+
+//        System.out.println("=========================");
+        SymbolTableLine virtualFunc = new SymbolTableLine();
+        virtualFunc.setLexme("$main$");
+        virtualFunc.setType("Function");
+        virtualFunc.isSep(true);
+        ST.add(virtualFunc);
+
+    }
+
+    public void push_id_and_check(String lookahead) {
+        ss.push(lookahead);
+        int stLinei = -1;
+
+        boolean isSep = false;
+
+        int line = 0;
+        for (SymbolTableLine stl : ST) {
+            if (stl.getLexme().equals(lookahead) && stl.isSep()) {
+                stLinei = line;
+                isSep = true;
+                break;
+            }
+            line++;
+
+        }
+
+        if (!isSep) {
+            for (int i = ST.size() - 1; i != 0; i--) {
+                if (ST.get(i).isSep()) {
+                    break;
+                }
+                if (ST.get(i).getLexme().equals(lookahead)) {
+                    stLinei = i;
+                }
+            }
+            if (stLinei == -1) {
+                for (int i = 1; i < ST.size(); i++) {
+                    if (ST.get(i).isSep()) {
+                        break;
+                    }
+                    if (ST.get(i).getLexme().equals(lookahead)) {
+                        stLinei = i;
+                    }
+                }
+            }
+        }
+
+        if (stLinei == -1) {
+            System.err.println("variable " + lookahead + " not defined");
+        }
+    }
+
+    public void set_arg_nr(String lookahead) {
+        String functionId = ss.peek();
+
+        int c = 0;
+        for (int i = ST.size() - 1; i != 0; i--) {
+            if (ST.get(i).isSep()) {
+                break;
+            }
+            c++;
+        }
+
+        System.out.println(functionId + " " + c );
+
+        for (SymbolTableLine stl : ST) {
+            if (stl.getLexme().equals(functionId)) {
+                stl.setNrOfArgs(c);
+            }
+        }
+
+    }
 }

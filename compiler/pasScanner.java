@@ -31,6 +31,7 @@ public class pasScanner {
         twoDel.add(":=");
         twoDel.add("<>");
 
+        oneDel.add("/");
         oneDel.add("<");
         oneDel.add(">");
         oneDel.add("=");
@@ -47,6 +48,7 @@ public class pasScanner {
         oneDel.add(")");
         oneDel.add(" ");
         oneDel.add("\n");
+
     }
 
     public String nextToken() {
@@ -56,34 +58,62 @@ public class pasScanner {
 
         int min = Integer.MAX_VALUE;
 
+        int indexC = Buffer.indexOf("{");
+
+        while (indexC == 0) {
+            Buffer = Buffer.substring(1).trim();
+            if (Buffer.length() < 30 && sc.hasNextLine()) {
+                Buffer += sc.nextLine();
+            }
+            int index2 = Buffer.indexOf("}");
+            if (index2 != -1) {
+                Buffer = Buffer.substring(index2 + 1).trim();
+                if (Buffer.length() < 30 && sc.hasNextLine()) {
+                    Buffer += sc.nextLine();
+                }
+            }
+
+            indexC = Buffer.indexOf("{");
+        }
+
+        Buffer = Buffer.replaceAll("end\\.", "end .");
+//        System.out.println(Buffer);
         for (String i : oneDel) {
             int index = Buffer.indexOf(i);
 
             if (index == 0) {
                 for (String j : twoDel) {
                     if (Buffer.charAt(0) == j.charAt(0)) {
-                        if (Buffer.length() > 1 &&  Buffer.charAt(1) == j.charAt(1)) {
+                        if (Buffer.length() > 1 && Buffer.charAt(1) == j.charAt(1)) {
                             String temp = Buffer.substring(0, 2);
                             Buffer = Buffer.substring(2).trim();
                             return temp;
                         }
                     }
                 }
+                if (i.equals(".")) {
+                    continue;
+                }
                 String temp = Buffer.substring(0, 1);
                 Buffer = Buffer.substring(1).trim();
                 return temp;
             }
 
+            if (i.equals(".")) {
+                continue;
+            }
             if (index != -1 && index < min) {
                 min = index;
             }
         }
-        if ( min != Integer.MAX_VALUE )
-        {
+        if (min != Integer.MAX_VALUE) {
             String temp = Buffer.substring(0, min);
             Buffer = Buffer.substring(min).trim();
             return temp;
-        }else{
+        } else if (Buffer.equals(".")) {
+            Buffer = "";
+            return ".";
+        } else {
             return "";
         }
     }
